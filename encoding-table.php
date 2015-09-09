@@ -1,14 +1,21 @@
 <?php
-function utf8_chr($unicode) {
-	return mb_convert_encoding( pack( "n" , $unicode ) , "UTF-8" , "UTF-16BE" ) ;
+function utf8_chr($ascii) {
+	return mb_convert_encoding( pack( "n" , $ascii ) , "UTF-8" , "UTF-16BE" ) ;
 }
-function utf8_ord($unicode) {
-	$char = utf8_chr($unicode) ;
+function utf8_ord($ascii) {
+	$char = utf8_chr($ascii) ;
 	$code = "";
 	for ($i=0; $i < strlen($char) ; $i++) { 
 		$code .= sprintf("%02X ", ord($char{$i}));
 	}
 	return trim($code);
+}
+function print_utf8($ascii){
+	$char = utf8_chr($ascii) ;
+	if ( preg_match("#[\\x00-\\x1F]|\\x7F|(?:\\xC2[\\x80-\\xA0])#", $char) ) {
+		return htmlentities("<control>");
+	}
+	return $char ;
 }
 ?>
 <!DOCTYPE html>
@@ -49,7 +56,7 @@ th {
 	<td><?=sprintf("U+%04X", $i);?></td>
 	<td><?=sprintf("&#x%02X;", $i);?></td>
 	<td><?=utf8_ord($i);?></td>
-	<td><?=utf8_chr($i);?></td>
+	<td><?=print_utf8($i);?></td>
 </tr>
 <? } ?>
 </table>
