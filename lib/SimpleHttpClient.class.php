@@ -11,7 +11,7 @@ class SimpleHttpClient
     protected $_postFields;
     protected $_referer = "http://www.google.com";
     protected $_session;
-    protected $_webpage;
+    protected $_content;
     protected $_includeHeader = false;
     protected $_noBody = false;
     protected $_status;
@@ -42,6 +42,7 @@ class SimpleHttpClient
         if ($this->authentication == 1) {
             curl_setopt($this->_session, CURLOPT_USERPWD, $this->auth_name.':'.$this->auth_pass);
         }
+
         if ($this->_post) {
             curl_setopt($this->_session, CURLOPT_POST, true);
             curl_setopt($this->_session, CURLOPT_POSTFIELDS, $this->_postFields);
@@ -62,10 +63,10 @@ class SimpleHttpClient
         curl_setopt($this->_session, CURLOPT_USERAGENT, $this->_useragent);
         curl_setopt($this->_session, CURLOPT_REFERER, $this->_referer);
 
-        $this->_webpage = curl_exec($this->_session);
+        $this->_content = curl_exec($this->_session);
         $this->_status = curl_getinfo($this->_session, CURLINFO_HTTP_CODE);
 
-        return $this->_webpage;
+        return $this->_content;
     }
 
     public function useAuth($use)
@@ -96,7 +97,7 @@ class SimpleHttpClient
         $this->_cookieFileLocation = $path;
     }
 
-    public function setPost ($postFields)
+    public function setPost($postFields)
     {
         $this->_post = true;
         $this->_postFields = $postFields;
@@ -120,7 +121,7 @@ class SimpleHttpClient
 
     public function __tostring()
     {
-        return $this->_webpage;
+        return $this->_content;
     }
 
     public function close()
