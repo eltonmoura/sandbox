@@ -1,4 +1,7 @@
 <?php
+include("./lib/Util.class.php");
+include("./lib/SimpleHttpClient.class.php");
+
 $data_path = "/usr/local/data/comics";
 $link_pattern = "#<div\sclass=\"img\-url\">//(.*?)</div>#is";
 $base_url = "https://";
@@ -7,16 +10,17 @@ if (!isset($argv[1])) {
     die("Uso: " . $argv[0] . " url|file\n");
 }
 
-$content = file_get_contents($argv[1]);
+$client = new SimpleHttpClient();
+$content = $client->get($argv[1]);
 
 if (!preg_match_all($link_pattern, $content, $matches)) {
-    die("Não foram encontradas imagens\n");
+    die("Não foram encontradas imagens\n$content\n");
 }
 
 print("Foram encontradas " . count($matches[1]) . " imagens\n");
 
 if (preg_match("#<title>(.*?)\|.*?</title>#is", $content, $m)) {
-    $dest_dir = $data_path . "/" . asSlug($m[1]);
+    $dest_dir = $data_path . "/" . Util::asSlug($m[1]);
     if (!is_dir($dest_dir)) {
         mkdir($dest_dir);
     }
@@ -36,40 +40,14 @@ foreach ($matches[1] as $link) {
 
     $url = $base_url . $link;
     print("Copiando $url (" . $i .")\n");
-    copy($url, $dest_file);
-}
+    
+    $client->setBinaryTransfer(true);
+    $content = $client->get($url);
 
-makeComicBookFromDir($dest_dir);
+    file_put_contents($dest_file, $content);
+}
+$client->close();
+
+Util::makeComicBookFromDir($dest_dir);
 
 print("Done.\n");
-
-function asSlug($text)
-{
-    $text = preg_replace('~[^\\pL\d]+~u', '-', $text);
-    $text = trim($text, '-');
-    $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
-    $text = strtolower($text);
-    $text = preg_replace('~[^-\w]+~', '', $text);
-    if (empty($text)) {
-        return 'n-a';
-    }
-    return $text;
-}
-
-function makeComicBookFromDir($dir)
-{
-    if (!is_dir($dir)) {
-        return false;
-    }
-    $zipFile = $dir . ".cbz";
-    $zipArchive = new ZipArchive();
-    if (!$zipArchive->open($zipFile, ZIPARCHIVE::OVERWRITE)) {
-        die("Failed to create archive\n");
-    }
-    $zipArchive->addGlob($dir . "/*");
-    if (!$zipArchive->status == ZIPARCHIVE::ER_OK) {
-        echo "Failed to write files to zip\n";
-    }
-    $zipArchive->close();
-    return true;
-}
