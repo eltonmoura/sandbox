@@ -12,6 +12,7 @@ class SimpleHttpClient
     protected $_content;
     protected $_includeHeader = false;
     protected $_noBody = false;
+    protected $_httpHeader = array();
     protected $_status;
     protected $_binaryTransfer = false;
     public $authentication = 0;
@@ -29,7 +30,8 @@ class SimpleHttpClient
         }
 
         curl_setopt($this->_session, CURLOPT_URL, $url);
-        curl_setopt($this->_session, CURLOPT_HTTPHEADER, array('Expect:'));
+        curl_setopt($this->_session, CURLOPT_REFERER, $referer);
+        curl_setopt($this->_session, CURLOPT_HTTPHEADER, $this->_httpHeader);
         curl_setopt($this->_session, CURLOPT_TIMEOUT, $this->_timeout);
         curl_setopt($this->_session, CURLOPT_MAXREDIRS, $this->_maxRedirects);
         curl_setopt($this->_session, CURLOPT_RETURNTRANSFER, true);
@@ -40,7 +42,6 @@ class SimpleHttpClient
         curl_setopt($this->_session, CURLOPT_NOBODY, $this->_noBody);
         curl_setopt($this->_session, CURLOPT_BINARYTRANSFER, $this->_binaryTransfer);
         curl_setopt($this->_session, CURLOPT_USERAGENT, $this->_useragent);
-        curl_setopt($this->_session, CURLOPT_REFERER, $referer);
 
         if ($this->authentication == 1) {
             curl_setopt($this->_session, CURLOPT_USERPWD, $this->auth_name.':'.$this->auth_pass);
@@ -51,10 +52,8 @@ class SimpleHttpClient
             curl_setopt($this->_session, CURLOPT_POSTFIELDS, $this->_postFields);
         }
 
-
-
         $this->_content = curl_exec($this->_session);
-        $this->_status = curl_getinfo($this->_session, CURLINFO_HTTP_CODE);
+        $this->_info = curl_getinfo($this->_session);
 
         return $this->_content;
     }
@@ -99,9 +98,9 @@ class SimpleHttpClient
         $this->_useragent = $userAgent;
     }
 
-    public function getHttpStatus()
+    public function getHttpInfo()
     {
-        return $this->_status;
+        return $this->_info;
     }
 
     public function __tostring()

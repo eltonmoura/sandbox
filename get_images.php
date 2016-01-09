@@ -4,14 +4,16 @@ include("./lib/SimpleHttpClient.class.php");
 
 $dataPath = "/usr/local/data/comics";
 $linkPattern = "#<div\sclass=\"img\-url\">//(.*?)</div>#is";
-$imagePattern = "#/([-_0-9a-zA-Z]+)/([-\._0-9a-zA-Z]+\.\w{3})#";
-$titlePattern = "#<title>(.*?)\|.*?</title>#is";
+$imagePattern = "#/([-_0-9a-zA-Z]+)/([-\._0-9a-zA-Z]+\.\w{3})#is";
+$titlePattern = "#<title>(.*?)\|[^\|]*?</title>#is";
 $baseUrl = "https://";
 
 if (!isset($argv[1])) {
     die("Uso: " . $argv[0] . " url|file\n");
 }
 $galeryUrl = $argv[1];
+$galeryUrl = str_replace("/galleries/", "/reader/", $galeryUrl);
+
 $client = new SimpleHttpClient();
 $content = $client->get($galeryUrl);
 
@@ -28,6 +30,8 @@ if (preg_match($titlePattern, $content, $m)) {
     }
 }
 
+$client->setBinaryTransfer(true);
+
 $i = 0;
 foreach ($matches[1] as $link) {
     $i++;
@@ -41,15 +45,20 @@ foreach ($matches[1] as $link) {
     }
 
     $url = $baseUrl . $link;
+
     print("Copiando $url (" . $i .")\n");
-    
-    $client->setBinaryTransfer(true);
     $content = $client->get($url, $galeryUrl);
+    $httpInfo = $client->getHttpInfo();
+
+    if ($httpInfo["http_code"] != "200") {
+        print("HttpInfo:\n");
+        print_r($httpInfo);
+    }
 
     file_put_contents($destFile, $content);
 }
 $client->close();
 
-Util::makeComicBookFromDir($destDir);
+Util::makeComicBookFromDir($destDir, "cbr");
 
 print("Done.\n");

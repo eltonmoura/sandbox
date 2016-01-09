@@ -14,12 +14,13 @@ class Util
         return $text;
     }
 
-    public static function makeComicBookFromDir($dir)
+    public static function makeComicBookFromDir($dir, $extension = "cbr")
     {
         if (!is_dir($dir)) {
             return false;
         }
-        $zipFile = $dir . ".cbz";
+
+        $zipFile = $dir . "." . $extension;
         $zipArchive = new ZipArchive();
         if (!$zipArchive->open($zipFile, ZIPARCHIVE::OVERWRITE)) {
             die("Failed to create archive\n");
