@@ -2,14 +2,12 @@
 class SimpleHttpClient
 {
     protected $_useragent = 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1';
-    protected $_url;
     protected $_followlocation = true;
     protected $_timeout = 30;
     protected $_maxRedirects = 4;
     protected $_cookieFileLocation = './cookie.txt';
     protected $_post;
     protected $_postFields;
-    protected $_referer = "http://www.google.com";
     protected $_session;
     protected $_content;
     protected $_includeHeader = false;
@@ -24,7 +22,7 @@ class SimpleHttpClient
     {
     }
 
-    public function get($url)
+    public function get($url, $referer = "")
     {
         if (!isset($this->_session)) {
             $this->_session = curl_init();
@@ -38,6 +36,11 @@ class SimpleHttpClient
         curl_setopt($this->_session, CURLOPT_FOLLOWLOCATION, $this->_followlocation);
         curl_setopt($this->_session, CURLOPT_COOKIEJAR, $this->_cookieFileLocation);
         curl_setopt($this->_session, CURLOPT_COOKIEFILE, $this->_cookieFileLocation);
+        curl_setopt($this->_session, CURLOPT_HEADER, $this->_includeHeader);
+        curl_setopt($this->_session, CURLOPT_NOBODY, $this->_noBody);
+        curl_setopt($this->_session, CURLOPT_BINARYTRANSFER, $this->_binaryTransfer);
+        curl_setopt($this->_session, CURLOPT_USERAGENT, $this->_useragent);
+        curl_setopt($this->_session, CURLOPT_REFERER, $referer);
 
         if ($this->authentication == 1) {
             curl_setopt($this->_session, CURLOPT_USERPWD, $this->auth_name.':'.$this->auth_pass);
@@ -48,20 +51,7 @@ class SimpleHttpClient
             curl_setopt($this->_session, CURLOPT_POSTFIELDS, $this->_postFields);
         }
 
-        if ($this->_includeHeader) {
-            curl_setopt($this->_session, CURLOPT_HEADER, true);
-        }
 
-        if ($this->_noBody) {
-            curl_setopt($this->_session, CURLOPT_NOBODY, true);
-        }
-
-        if ($this->_binaryTransfer) {
-            curl_setopt($this->_session, CURLOPT_BINARYTRANSFER, true);
-        }
-
-        curl_setopt($this->_session, CURLOPT_USERAGENT, $this->_useragent);
-        curl_setopt($this->_session, CURLOPT_REFERER, $this->_referer);
 
         $this->_content = curl_exec($this->_session);
         $this->_status = curl_getinfo($this->_session, CURLINFO_HTTP_CODE);
@@ -85,11 +75,6 @@ class SimpleHttpClient
     public function setPass($pass)
     {
         $this->auth_pass = $pass;
-    }
-
-    public function setReferer($referer)
-    {
-        $this->_referer = $referer;
     }
 
     public function setCookiFileLocation($path)
