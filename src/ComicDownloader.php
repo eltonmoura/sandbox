@@ -8,8 +8,6 @@ class ComicDownloader
 {
     private $dataPath = "/home/eltonms/temp/comics/";
     private $linkPattern = "#\/\/tn\.hitomi\.la\/smalltn\/(.*?)\.jpg\'#is";
-    private $imagePattern = "#/([-_0-9a-zA-Z]+)/([-\._0-9a-zA-Z]+\.\w{3})#is";
-    private $titlePattern = "#<title>(.*?)\s*(?:by\s*(.*?))?\-[^<]*?</title>#is";
     private $baseUrl = "https://";
     private $galeryUrl;
     private $comicExtension = "cbz";
@@ -59,8 +57,9 @@ class ComicDownloader
         // Compacta o diretório em um arquivo do tipo comic
         $this->makeComicBookFromDir($this->destDir);
 
-        // Apaga o diretório temporário
-        Util::delTree($this->destDir);
+        // Apaga o diretório temporário e todos os arquivos recursivamente
+        $dirHandler = new DirHandler($this->destDir);
+        $dirHandler->removeRecursively();
     }
 
     private function getHttpClient()
@@ -101,7 +100,7 @@ class ComicDownloader
         }
         $autor = trim(strip_tags($matches[1]));
 
-        $this->destDir = $this->dataPath . Util::asSlug($autor) . '_' . Util::asSlug($titulo);
+        $this->destDir = $this->dataPath . Str::asSlug($autor) . '_' . Str::asSlug($titulo);
 
         if (! is_dir($this->destDir)) {
             if (! mkdir($this->destDir)) {
@@ -154,12 +153,12 @@ class ComicDownloader
         if (is_file($zipFile)) {
             unlink($zipFile);
         }
-        $ret = $zipArchive->open($zipFile, \ZIPARCHIVE::CREATE);
+        $ret = $zipArchive->open($zipFile, ZipHandler::CREATE);
         if ($ret !== true) {
             throw new Exception("Failed to create archive $zipFile (". ZipHandler::errorMessage($ret) .")\n");
         }
         $zipArchive->addGlob($dir . "/*");
-        if (!$zipArchive->status == \ZIPARCHIVE::ER_OK) {
+        if (!$zipArchive->status == ZipHandler::ER_OK) {
             throw new Exception("Failed to write files to zip\n");
         }
         $zipArchive->close();
