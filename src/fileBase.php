@@ -1,9 +1,10 @@
 <?php
 $filename = "/home/eltonms/out.txt";
-
+// populate($filename);
 
 function populate($filename)
 {
+    file_put_contents($filename, "campo1;campo2;campo3" . PHP_EOL);
     for ($i=0; $i < 4000000; $i++) {
         $msisdn = sprintf('%06d%05d', mt_rand(0, 999999), mt_rand(0, 99999));
         $txt = sprintf('%s;%s;%s', $msisdn, md5(rand()), md5(rand()));
