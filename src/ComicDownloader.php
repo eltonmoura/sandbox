@@ -3,8 +3,9 @@ namespace Sandbox;
 
 use \Exception;
 use GuzzleHttp\Client as HttpClient;
+use Sandbox\MultJobManeger;
 
-class ComicDownloader
+class ComicDownloader extends MultJobManeger
 {
     private $dataPath = "/home/eltonms/temp/comics/";
     private $linkPattern = "#\/\/tn\.hitomi\.la\/smalltn\/(.*?)\.jpg\'#is";
@@ -17,6 +18,29 @@ class ComicDownloader
     public function __construct($galeryUrl)
     {
         $this->galeryUrl = $galeryUrl;
+        $this->logger = LoggerSingleton::getInstance();
+    }
+
+    public function haveWork()
+    {
+        return count($this->imageLinks) > 0;
+    }
+
+    public function getItems($numItems)
+    {
+        $items = [];
+        $numItems = ($numItems < count($this->imageLinks)) ? $numItems : count($this->imageLinks);
+
+        while (count($items) < $numItems) {
+            $items[] = array_shift($this->imageLinks);
+        }
+        return $items;
+    }
+
+    public function process($items)
+    {
+        // Baixa as imagens no diretório temporário
+        $this->downloadImages($items);
     }
 
     public function run()
@@ -40,19 +64,19 @@ class ComicDownloader
         if (! file_put_contents($this->contentTempPath, $content)) {
             throw new Exception("Erro ao gravar o conteúdo da galeria em content.htm");
         }
-        
-        #exit;
 
         // Faz o parse das URLS
-        $imageLinks = $this->getImageLinks($content);
-        print(sprintf("Foram encontradas %s imagens\n", count($imageLinks)));
-        #print_r($imageLinks); exit;
+        $this->imageLinks = $this->getImageLinks($content);
+        $this->logger->info(sprintf("Foram encontradas %s imagens\n", count($this->imageLinks)));
+        #print_r($this->imageLinks); exit;
 
         // Prepara o diretório temporário para armazenar as imagens
         $this->setTempDir($content);
 
-        // Baixa as imagens no diretório temporário
-        $this->downloadImages($imageLinks);
+        // Usa o MultJobManeger para fazer o download da imagens
+        $numItems = 2;
+        $numJobs = 50;
+        $this->init($numItems, $numJobs);
 
         // Compacta o diretório em um arquivo do tipo comic
         $this->makeComicBookFromDir($this->destDir);
@@ -77,8 +101,9 @@ class ComicDownloader
         }
         $links = $matches[1];
         #print_r($links); exit;
+        $this->imgSeq = 0;
         array_walk($links, function (&$value) {
-            $value = "a.hitomi.la/galleries/" . $value;
+            $value = ['seq' => $this->imgSeq++, 'link' => "a.hitomi.la/galleries/" . $value];
         });
         return $links;
     }
@@ -117,23 +142,22 @@ class ComicDownloader
 
     private function downloadImages($imageLinks)
     {
-        $i = 0;
-        foreach ($imageLinks as $link) {
-            $i++;
+        $this->logger->info(sprintf('imageLinks: %s', json_encode($imageLinks)));
 
-            if (!preg_match("#\.([^\.]*?)$#", $link, $matches)) {
-                throw new Exception("Não foi possível obter a extensão do arquivo\n");
+        foreach ($imageLinks as $row) {
+            if (!preg_match("#\.([^\.]*?)$#", $row['link'], $matches)) {
+                throw new Exception("Não foi possível obter a extensão do arquivo");
             }
             $imgExtension = $matches[1];
 
-            $destFile = sprintf("%s/img%04d.%s", $this->destDir, $i, $imgExtension);
+            $destFile = sprintf("%s/img%04d.%s", $this->destDir, $row['seq'], $imgExtension);
 
             if (is_file($destFile)) {
                 continue;
             }
 
-            $url = $this->baseUrl . $link;
-            print("Copiando $url (" . $i .")\n");
+            $url = $this->baseUrl . $row['link'];
+            $this->logger->info("Copiando $url (" . $row['seq'] .")");
 
             if (! @copy($url, $destFile)) {
                 throw new Exception(sprintf("Erro ao copiar o arquivo '%s' para '%s'.", $url, $destFile));
