@@ -1,19 +1,24 @@
 <?php
 namespace Sandbox;
 
+use \Exception;
+
 class ConfigManeger
 {
-    private $config;
-    
-    public function __construct($context = 'development')
-    {
-        $this->config = parse_ini_file(sprintf('%s/config/%s.ini', APPLICATION_DIR, $context), true);
-    }
+    private static $config;
 
-    public function __get($name)
+    public static function getConfig()
     {
-        if (array_key_exists($name, $this->config)) {
-            return (object) $this->config[$name];
+        if (!isset(self::$ConfigManeger)) {
+            if (!($context = getenv('CONTEXT'))) {
+                throw new Exception("Erro: É necessessário configurar a variável de ambiente 'CONTEXT'");
+            }
+            $configFile = sprintf('%s/config/%s.ini', APPLICATION_DIR, $context);
+            if (!is_file($configFile)) {
+                throw new Exception(sprintf("Erro: Não foi encontrado o arquivo de configuração '%s'", $configFile));
+            }
+            self::$config = json_decode(json_encode(parse_ini_file($configFile, true), false));
         }
+        return self::$config;
     }
 }

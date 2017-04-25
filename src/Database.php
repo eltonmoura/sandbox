@@ -19,7 +19,7 @@ class Database
     public static function getInstance()
     {
         if (!(self::$instance instanceof PDO)) {
-            $config = new ConfigManeger();
+            $config = ConfigManeger::getConfig();
             self::$instance = new PDO(
                 sprintf(
                     'mysql:host=%s;dbname=%s;port=%s',
