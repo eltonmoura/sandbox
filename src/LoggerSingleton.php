@@ -2,6 +2,7 @@
 namespace Sandbox;
 
 use Katzgrau\KLogger\Logger;
+use Psr\Log\LogLevel;
 
 class LoggerSingleton
 {
@@ -14,7 +15,7 @@ class LoggerSingleton
     public static function getInstance()
     {
         if (!isset(self::$logger)) {
-            self::$logger =  new Logger(APPLICATION_DIR . '/logs');
+            self::$logger =  new Logger('/var/log/sandbox/', LogLevel::DEBUG, ['dateFormat' => 'c']);
         }
         return self::$logger;
     }

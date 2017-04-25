@@ -13,17 +13,12 @@ class ComicDownloader extends MultJobManeger
     private $galeryUrl;
     private $comicExtension = "cbz";
     private $httpClient;
-    private $contentTempPath = APPLICATION_DIR . '/data/content.htm';
+    private $contentTempPath = '/var/data/content.htm';
 
     public function __construct($galeryUrl)
     {
         $this->galeryUrl = $galeryUrl;
         $this->logger = LoggerSingleton::getInstance();
-    }
-
-    public function haveWork()
-    {
-        return count($this->imageLinks) > 0;
     }
 
     public function getItems($numItems)
