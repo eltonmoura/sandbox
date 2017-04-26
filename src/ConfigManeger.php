@@ -10,8 +10,8 @@ class ConfigManeger
     public static function getConfig()
     {
         if (!isset(self::$ConfigManeger)) {
-            if (!($context = getenv('CONTEXT'))) {
-                throw new Exception("Erro: É necessessário configurar a variável de ambiente 'CONTEXT'");
+            if (!($context = getenv('APP_CONTEXT'))) {
+                throw new Exception("Erro: É necessessário configurar a variável de ambiente 'APP_CONTEXT'");
             }
             $configFile = sprintf('%s/config/%s.ini', APPLICATION_DIR, $context);
             if (!is_file($configFile)) {
