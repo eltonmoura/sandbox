@@ -4,6 +4,7 @@ namespace Sandbox;
 use \Exception;
 use GuzzleHttp\Client as HttpClient;
 use Sandbox\MultJobManeger;
+use Sandbox\ProgressBar;
 
 class ComicDownloader extends MultJobManeger
 {
@@ -62,8 +63,12 @@ class ComicDownloader extends MultJobManeger
 
         // Faz o parse das URLS
         $this->imageLinks = $this->getImageLinks($content);
+        $this->imageLinksCount = count($this->imageLinks);
         $this->logger->info(sprintf("Foram encontradas %s imagens\n", count($this->imageLinks)));
         #print_r($this->imageLinks); exit;
+
+        file_put_contents('tmp.txt', '');
+        $this->progressBar = new ProgressBar(count($this->imageLinks));
 
         // Prepara o diretório temporário para armazenar as imagens
         $this->setTempDir($content);
@@ -148,6 +153,7 @@ class ComicDownloader extends MultJobManeger
             $destFile = sprintf("%s/img%04d.%s", $this->destDir, $row['seq'], $imgExtension);
 
             if (is_file($destFile)) {
+                file_put_contents('tmp.txt', $row['link'] . PHP_EOL, FILE_APPEND);
                 continue;
             }
 
@@ -157,6 +163,9 @@ class ComicDownloader extends MultJobManeger
             if (! @copy($url, $destFile)) {
                 throw new Exception(sprintf("Erro ao copiar o arquivo '%s' para '%s'.", $url, $destFile));
             }
+
+            file_put_contents('tmp.txt', $row['link'] . PHP_EOL, FILE_APPEND);
+            $this->progressBar->display(count(file('tmp.txt')));
         }
         return true;
     }
