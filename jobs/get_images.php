@@ -12,7 +12,10 @@ $galeryUrl = $argv[1];
 
 $logger->info(sprintf('Downloading %s', $galeryUrl));
 
-$comicDownloader = new ComicDownloader($galeryUrl);
-$comicDownloader->run();
+
+
+
+#$comicDownloader = new ComicDownloader($galeryUrl);
+#$comicDownloader->run();
 
 $logger->info('Done.');

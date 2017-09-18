@@ -22,6 +22,11 @@ class ComicDownloader extends MultJobManeger
         $this->logger = LoggerSingleton::getInstance();
     }
 
+    public function setLinkPattern($linkPattern)
+    {
+        $this->linkPattern = $linkPattern;
+    }
+
     public function getItems($numItems)
     {
         $items = [];
