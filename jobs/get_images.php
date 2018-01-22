@@ -12,10 +12,16 @@ $galeryUrl = $argv[1];
 
 $logger->info(sprintf('Downloading %s', $galeryUrl));
 
+$comicDownloader = new ComicDownloader($galeryUrl);
 
+$comicDownloader->setLinkPregReplace(
+    '#\'//tn.hitomi.la/smalltn/(.*?).jpg\'#is',
+    'https://aa.hitomi.la/galleries/<replace>'
+);
+$comicDownloader->setTitleRegex('#<h1><a\shref="/reader/.*?>(.*?)</a></h1>#is');
+$comicDownloader->setAuthorRegex('#<li><a\shref="/artist/.*?>(.*?)</a></li>#is');
 
-
-#$comicDownloader = new ComicDownloader($galeryUrl);
-#$comicDownloader->run();
+$comicDownloader->setDataPath('/home/eltonmoura/crypt/comics/');
+$comicDownloader->run();
 
 $logger->info('Done.');

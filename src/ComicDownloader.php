@@ -8,13 +8,13 @@ use Sandbox\ProgressBar;
 
 class ComicDownloader extends MultJobManeger
 {
-    private $dataPath = "/home/eltonms/temp/comics/";
+    private $dataPath;
     private $linkPattern = "#\/\/tn\.hitomi\.la\/smalltn\/(.*?)\.jpg\'#is";
     private $baseUrl = "https://";
     private $galeryUrl;
     private $comicExtension = "cbz";
     private $httpClient;
-    private $contentTempPath = '/var/data/content.htm';
+    private $contentTempPath = '/tmp/comicDownloaderTempContent';
 
     public function __construct($galeryUrl)
     {
@@ -22,9 +22,15 @@ class ComicDownloader extends MultJobManeger
         $this->logger = LoggerSingleton::getInstance();
     }
 
-    public function setLinkPattern($linkPattern)
+    public function setDataPath($dataPath)
+    {
+        $this->dataPath = $dataPath;
+    }
+
+    public function setLinkPregReplace($linkPattern, $linkReplacement)
     {
         $this->linkPattern = $linkPattern;
+        $this->linkReplacement = $linkReplacement;
     }
 
     public function getItems($numItems)
@@ -105,27 +111,37 @@ class ComicDownloader extends MultJobManeger
             throw new Exception("Não foram encontradas imagens\n$content\n");
         }
         $links = $matches[1];
+
         #print_r($links); exit;
+
         $this->imgSeq = 0;
         array_walk($links, function (&$value) {
-            $value = ['seq' => $this->imgSeq++, 'link' => "a.hitomi.la/galleries/" . $value];
+            $value = ['seq' => $this->imgSeq++, 'link' => str_replace('<replace>', $value, $this->linkReplacement)];
         });
+
+        #print_r($links); exit;
+
         return $links;
+    }
+
+    public function setTitleRegex($titleRegex)
+    {
+        $this->titleRegex = $titleRegex;
+    }
+
+    public function setAuthorRegex($authorRegex)
+    {
+        $this->authorRegex = $authorRegex;
     }
 
     private function setTempDir($content)
     {
-        if (! preg_match('#(<h1><a\shref="/reader.*?</h2>)#is', $content, $matches)) {
-            throw new Exception('Não foi possível obter informacoes da galeria');
-        }
-        $info = $matches[1];
-
-        if (! preg_match('#<h1>\s*(.*?)\s*</h1>#is', $info, $matches)) {
+        if (! preg_match($this->titleRegex, $content, $matches)) {
             throw new Exception('Não foi possível obter o título');
         }
         $titulo = trim(strip_tags($matches[1]));
 
-        if (! preg_match('#<h2>\s*(.*?)\s*</h2>#is', $info, $matches)) {
+        if (! preg_match($this->authorRegex, $content, $matches)) {
             throw new Exception('Não foi possível obter o autor');
         }
         $autor = trim(strip_tags($matches[1]));
@@ -162,7 +178,7 @@ class ComicDownloader extends MultJobManeger
                 continue;
             }
 
-            $url = $this->baseUrl . $row['link'];
+            $url = $row['link'];
             $this->logger->info("Copiando $url (" . $row['seq'] .")");
 
             if (! @copy($url, $destFile)) {
